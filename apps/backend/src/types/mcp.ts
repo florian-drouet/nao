@@ -15,6 +15,7 @@ export interface McpServerState {
 		name: string;
 		description?: string;
 		input_schema: unknown;
+		disabled: boolean;
 	}>;
 	error?: string;
 }

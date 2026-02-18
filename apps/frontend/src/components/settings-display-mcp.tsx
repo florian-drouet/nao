@@ -4,13 +4,22 @@ import { useState } from 'react';
 import { trpc } from '@/main';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 
 interface McpListProps {
 	isAdmin: boolean;
 }
+
+const estimateToolTokens = (tool: { name: string; description?: string; input_schema: unknown }) => {
+	const serialized = JSON.stringify({
+		name: tool.name,
+		description: tool.description ?? '',
+		schema: tool.input_schema ?? {},
+	});
+	return Math.ceil(serialized.length / 4);
+};
 
 export function McpList({ isAdmin }: McpListProps) {
 	const mcpState = useQuery({
@@ -29,6 +38,22 @@ export function McpList({ isAdmin }: McpListProps) {
 		}),
 	);
 
+	const toggleToolMutation = useMutation(
+		trpc.mcp.toggleTool.mutationOptions({
+			onSuccess: (data, _, __, ctx) => {
+				ctx.client.setQueryData(trpc.mcp.getState.queryKey(), () => data);
+			},
+		}),
+	);
+
+	const setAllServerToolsMutation = useMutation(
+		trpc.mcp.setAllServerTools.mutationOptions({
+			onSuccess: (data, _, __, ctx) => {
+				ctx.client.setQueryData(trpc.mcp.getState.queryKey(), () => data);
+			},
+		}),
+	);
+
 	const handleReconnect = async () => {
 		await reconnectMutation.mutateAsync();
 	};
@@ -41,6 +66,14 @@ export function McpList({ isAdmin }: McpListProps) {
 				return [...prev, serverName];
 			}
 		});
+	};
+
+	const handleToggleTool = (toolName: string, disabled: boolean) => {
+		toggleToolMutation.mutate({ toolName, disabled });
+	};
+
+	const handleSetAllServerTools = (serverName: string, disabled: boolean) => {
+		setAllServerToolsMutation.mutate({ serverName, disabled });
 	};
 
 	const mcpEntries = mcpState.data ? Object.entries(mcpState.data) : [];
@@ -92,6 +125,8 @@ export function McpList({ isAdmin }: McpListProps) {
 							{mcpEntries.map(([name, state]) => {
 								const isConnected = !state.error;
 								const isExpanded = expandedServers.includes(name);
+								const enabledCount = state.tools.filter((t) => !t.disabled).length;
+								const totalCount = state.tools.length;
 
 								return (
 									<>
@@ -130,14 +165,64 @@ export function McpList({ isAdmin }: McpListProps) {
 															</div>
 														) : (
 															<>
-																<div className='text-sm font-medium mb-2'>
-																	Tools ({state.tools.length})
+																<div className='flex items-center justify-between mb-2'>
+																	<div className=' flex gap-4 text-sm font-medium'>
+																		<div>
+																			{enabledCount} / {totalCount} tools active
+																		</div>
+																		<div>
+																			~
+																			{state.tools
+																				.filter((t) => !t.disabled)
+																				.reduce(
+																					(sum, t) =>
+																						sum + estimateToolTokens(t),
+																					0,
+																				)}{' '}
+																			tokens
+																		</div>
+																	</div>
+																	{isAdmin && (
+																		<Button
+																			variant='ghost'
+																			size='sm'
+																			onClick={() =>
+																				handleSetAllServerTools(
+																					name,
+																					enabledCount > 0,
+																				)
+																			}
+																			disabled={
+																				setAllServerToolsMutation.isPending
+																			}
+																		>
+																			{enabledCount > 0
+																				? 'Disable all'
+																				: 'Enable all'}
+																		</Button>
+																	)}
 																</div>
-																<div className='flex flex-wrap gap-2'>
+																<div className='flex flex-col gap-1'>
 																	{state.tools.map((tool) => (
-																		<Badge key={tool.name} variant='outline'>
-																			{tool.name}
-																		</Badge>
+																		<div
+																			key={tool.name}
+																			className='flex items-center justify-between py-1'
+																		>
+																			<span className='text-sm'>{tool.name}</span>
+																			<Switch
+																				checked={!tool.disabled}
+																				onCheckedChange={(checked) =>
+																					handleToggleTool(
+																						tool.name,
+																						!checked,
+																					)
+																				}
+																				disabled={
+																					!isAdmin ||
+																					toggleToolMutation.isPending
+																				}
+																			/>
+																		</div>
 																	))}
 																</div>
 															</>

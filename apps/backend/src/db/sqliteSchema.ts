@@ -357,3 +357,27 @@ export const projectSavedPrompt = sqliteTable(
 	},
 	(t) => [index('project_saved_prompt_projectId_idx').on(t.projectId)],
 );
+
+export const projectMcpConfig = sqliteTable(
+	'project_mcp_config',
+	{
+		id: text('id')
+			.$defaultFn(() => crypto.randomUUID())
+			.primaryKey(),
+		projectId: text('project_id')
+			.notNull()
+			.references(() => project.id, { onDelete: 'cascade' }),
+		disabledTools: text('disabled_tools', { mode: 'json' }).$type<string[]>().notNull().default([]),
+		createdAt: integer('created_at', { mode: 'timestamp_ms' })
+			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+			.notNull(),
+		updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+			.$onUpdate(() => new Date())
+			.notNull(),
+	},
+	(t) => [
+		index('project_mcp_config_projectId_idx').on(t.projectId),
+		unique('project_mcp_config_projectId_unique').on(t.projectId),
+	],
+);

@@ -334,3 +334,25 @@ export const projectSavedPrompt = pgTable(
 	},
 	(t) => [index('project_saved_prompt_projectId_idx').on(t.projectId)],
 );
+
+export const projectMcpConfig = pgTable(
+	'project_mcp_config',
+	{
+		id: text('id')
+			.$defaultFn(() => crypto.randomUUID())
+			.primaryKey(),
+		projectId: text('project_id')
+			.notNull()
+			.references(() => project.id, { onDelete: 'cascade' }),
+		disabledTools: text('disabled_tools').array().notNull().default([]),
+		createdAt: timestamp('created_at').defaultNow().notNull(),
+		updatedAt: timestamp('updated_at')
+			.defaultNow()
+			.$onUpdate(() => new Date())
+			.notNull(),
+	},
+	(t) => [
+		index('project_mcp_config_projectId_idx').on(t.projectId),
+		unique('project_mcp_config_projectId_unique').on(t.projectId),
+	],
+);
