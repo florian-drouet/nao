@@ -292,7 +292,7 @@ class RedshiftConfig(DatabaseConfig):
             result = conn.raw_sql(query).fetchall()
             schemas = [row[0] for row in result]
             return schemas
-        except Exception as e:
+        except Exception:
             list_databases = getattr(conn, "list_databases", None)
             return list_databases() if list_databases else ["public"]
 
