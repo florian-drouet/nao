@@ -289,7 +289,7 @@ class RedshiftConfig(DatabaseConfig):
             ORDER BY nspname
         """
         try:
-            result = conn.raw_sql(query).fetchall()
+            result = conn.raw_sql(query).fetchall()  # type: ignore[union-attr]
             schemas = [row[0] for row in result]
             return schemas
         except Exception:
