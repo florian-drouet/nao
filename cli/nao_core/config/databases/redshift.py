@@ -279,7 +279,7 @@ class RedshiftConfig(DatabaseConfig):
         """Get all schemas in the current database."""
         if self.schema_name:
             return [self.schema_name]
-        
+
         # Query system catalog directly to get all schemas
         query = """
             SELECT nspname 
