@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Radio, ThumbsUp, Users, Wrench } from 'lucide-react';
+import { CheckIcon, Radio, ThumbsUp, Users, Wrench } from 'lucide-react';
 import { CHAT_REPLAY_FEEDBACK_STATES, CHAT_REPLAY_TOOL_STATES, providerLabel } from '@nao/shared/types';
 import { USAGE_SOURCES } from '@nao/backend/usage';
 import type { Granularity, UsageSource } from '@nao/backend/usage';
@@ -12,7 +12,6 @@ import type {
 import type { LucideIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -302,11 +301,9 @@ function MultiSelectFilter<T extends string>({
 								value={option.label}
 								onSelect={() => toggleValue(option.value)}
 							>
-								<Checkbox
-									checked={draft.includes(option.value)}
-									tabIndex={-1}
-									className='pointer-events-none'
-								/>
+								<span className='flex size-4 items-center justify-center'>
+									{draft.includes(option.value) && <CheckIcon className='size-4' />}
+								</span>
 								<span className='flex-1 truncate'>{option.label}</span>
 								{typeof option.count === 'number' && (
 									<Badge variant='secondary' className='h-4 px-1 text-xs'>
